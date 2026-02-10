@@ -1,0 +1,70 @@
+#!/bin/bash
+set -euo pipefail
+
+# ---------------------------------
+# Vapexia Manufacturing Group
+# Automated Next.js → Vercel Deploy
+# ---------------------------------
+
+SITE_URL="https://vapexiamfg.com"
+
+echo "🚀 Starting Vapexia deployment..."
+
+# -------------------------------
+# SAFETY CHECKS
+# -------------------------------
+
+if ! command -v npm >/dev/null 2>&1; then
+  echo "❌ npm is not installed"
+  exit 1
+fi
+
+if ! command -v vercel >/dev/null 2>&1; then
+  echo "❌ Vercel CLI not installed"
+  echo "Run: npm i -g vercel"
+  exit 1
+fi
+
+if [ -z "${VERCEL_TOKEN:-}" ]; then
+  echo "❌ VERCEL_TOKEN environment variable is missing"
+  exit 1
+fi
+
+# -------------------------------
+# INSTALL DEPENDENCIES
+# -------------------------------
+
+echo "📦 Installing dependencies..."
+npm ci
+
+# -------------------------------
+# SITEMAP / ROBOTS
+# -------------------------------
+
+if [ -f "next-sitemap.config.js" ]; then
+  echo "🗺️ Generating sitemap & robots.txt..."
+  npx next-sitemap
+else
+  echo "⚠️ next-sitemap.config.js not found — skipping sitemap"
+fi
+
+# -------------------------------
+# BUILD
+# -------------------------------
+
+echo "🏗️ Building Next.js site..."
+npm run build
+
+# -------------------------------
+# DEPLOY
+# -------------------------------
+
+echo "☁️ Deploying to Vercel (production)..."
+vercel deploy --prod --confirm --token "$VERCEL_TOKEN"
+
+# -------------------------------
+# DONE
+# -------------------------------
+
+echo "✅ Deployment successful!"
+echo "🌐 Live at: $SITE_URL"
